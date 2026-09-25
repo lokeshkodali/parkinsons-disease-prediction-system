@@ -1,0 +1,17 @@
+\begin{table*}[htbp]
+\centering
+\caption{Performance Comparison of Machine Learning Models via 5-Fold Stratified Cross-Validation with Leakage-Free SMOTENC}
+\label{tab:model_benchmark}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Model} & \textbf{Accuracy (\%)} & \textbf{Sensitivity (\%)} & \textbf{Specificity (\%)} & \textbf{F1-Score} & \textbf{ROC-AUC} & \textbf{MCC} \\
+\hline
+Logistic Regression & 78.62 ± 1.83 & 78.09 ± 1.92 & 79.50 ± 2.76 & 0.8201 ± 0.0157 & 0.8791 ± 0.0108 & 0.5627 ± 0.0378 \\
+K-Nearest Neighbors & 85.78 ± 1.31 & 85.84 ± 1.95 & 85.67 ± 3.30 & 0.8828 ± 0.0107 & 0.9017 ± 0.0063 & 0.7047 ± 0.0282 \\
+Decision Tree & 88.79 ± 1.14 & 90.43 ± 1.25 & 86.07 ± 1.61 & 0.9097 ± 0.0094 & 0.9204 ± 0.0070 & 0.7622 ± 0.0239 \\
+Support Vector Machine & 85.23 ± 0.99 & 85.44 ± 1.26 & 84.88 ± 2.65 & 0.8784 ± 0.0078 & 0.9196 ± 0.0078 & 0.6929 ± 0.0221 \\
+\textbf{Random Forest} & 91.11 ± 0.91 & 92.41 ± 1.44 & 88.96 ± 0.98 & 0.9284 ± 0.0077 & 0.9277 ± 0.0100 & 0.8114 ± 0.0186 \\
+\textbf{XGBoost} & 90.91 ± 1.03 & 92.01 ± 1.20 & 89.09 ± 1.01 & 0.9267 ± 0.0085 & 0.9363 ± 0.0045 & 0.8075 ± 0.0214 \\
+\hline
+\end{tabular}
+\end{table*}

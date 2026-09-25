@@ -1,0 +1,10 @@
+{
+  "accuracy": 91.11,
+  "roc_auc": 92.77,
+  "f1_class0": 0.89,
+  "f1_class1": 0.92,
+  "cv_folds": 5,
+  "protocol": "5-Fold Stratified Cross-Validation with Inside-Fold SMOTENC Resampling",
+  "models_evaluated": 6,
+  "updated_at": "2026-09-25"
+}
