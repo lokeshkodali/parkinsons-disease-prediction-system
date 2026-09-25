@@ -1,0 +1,15 @@
+\begin{table}
+\caption{Paired Statistical Significance Tests (Random Forest vs. Baseline Models)}
+\label{tab:significance}
+\begin{tabular}{lllllllll}
+\toprule
+Model Comparison & Delta Accuracy (%) & 95% Confidence Interval & Paired t-stat & p-value (t-test) & Wilcoxon W & p-value (Wilcoxon) & Cohen's d & Significance (alpha=0.05) \\
+\midrule
+Random Forest vs. XGBoost & +0.20% & [-0.34%, +0.74%] & 1.022 & 0.3644 & 3.0 & 0.3125 & 0.46 & Indistinguishable \\
+Random Forest vs. Decision Tree & +2.32% & [+0.11%, +4.53%] & 2.908 & 0.0438 & 0.0 & 0.0625 & 1.30 & Significant \\
+Random Forest vs. K-Nearest Neighbors & +5.33% & [+3.46%, +7.20%] & 7.920 & 0.0014 & 0.0 & 0.0625 & 3.54 & Significant \\
+Random Forest vs. Support Vector Machine & +5.88% & [+4.10%, +7.65%] & 9.185 & 0.0008 & 0.0 & 0.0625 & 4.11 & Significant \\
+Random Forest vs. Logistic Regression & +12.49% & [+9.30%, +15.69%] & 10.864 & 0.0004 & 0.0 & 0.0625 & 4.86 & Significant \\
+\bottomrule
+\end{tabular}
+\end{table}

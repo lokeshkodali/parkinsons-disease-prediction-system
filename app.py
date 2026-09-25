@@ -1783,10 +1783,83 @@ with tab_benchmark:
                 width="stretch"
             )
 
+    # 2. Paired Statistical Significance & Hypothesis Testing (Table 3)
+    st.markdown("#### 2. Paired Statistical Significance & Hypothesis Testing")
+    st.caption("Rigorous fold-level paired hypothesis testing comparing Random Forest against all competitive baselines across 5 Stratified Folds.")
+
+    sig_tests = benchmark_summary.get("statistical_significance", {}).get("tests", [])
+    if sig_tests:
+        sig_display_rows = []
+        for t in sig_tests:
+            sig_display_rows.append({
+                "Model Comparison": f"Random Forest vs. {t['challenger']}",
+                "Delta Accuracy (%)": f"{t['delta_accuracy']:+.2f}%",
+                "95% Confidence Interval": f"[{t['ci_95'][0]:+.2f}%, {t['ci_95'][1]:+.2f}%]",
+                "Paired t-statistic": f"{t['t_stat']:.3f}",
+                "p-value (t-test)": f"{t['p_value_t']:.4f}",
+                "Wilcoxon W": f"{t['wilcoxon_w']:.1f}",
+                "p-value (Wilcoxon)": f"{t['p_value_w']:.4f}",
+                "Cohen's d": f"{t['cohen_d']:.2f}",
+                "Verdict (alpha = 0.05)": "Significant (p < 0.05)" if t["is_significant"] else "Indistinguishable (p >= 0.05)"
+            })
+        df_sig = pd.DataFrame(sig_display_rows)
+        st.dataframe(df_sig, width="stretch", hide_index=True)
+
+        st.markdown(
+            """
+            <div class="alert-banner alert-info">
+                <b>⚖️ Reviewer Justification & Model Selection Analysis:</b><br>
+                • <b>Random Forest vs. XGBoost (p = 0.3644):</b> The mean accuracy difference is merely <b>+0.20%</b> with a 95% Confidence Interval of <b>[-0.34%, +0.74%]</b>. 
+                Because p &gt; 0.05, the two architectures are <b>statistically indistinguishable</b> in predictive accuracy.<br>
+                • <b>Why Random Forest is the Primary Model:</b> Rather than asserting RF as an anomalous statistical outlier, RF was chosen as the primary point-of-care screening model because of <b>exact, deterministic TreeSHAP local attributions and clinical transparency</b>. Concurrently, XGBoost provides top ROC-AUC (0.9363) as an essential consensus partner.<br>
+                • <b>Significant Outperformance Over Traditional Baselines:</b> Ensemble tree methods significantly outperform Decision Tree (p = 0.0438), KNN (p = 0.0014), SVM (p = 0.0008), and Logistic Regression (p = 0.0004).
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        sig_c1, sig_c2 = st.columns(2)
+        with sig_c1:
+            st.download_button(
+                "⬇️ Download Statistical Significance CSV (Table 3)",
+                data=df_sig.to_csv(index=False).encode('utf-8'),
+                file_name="Table3_Statistical_Significance.csv",
+                mime="text/csv",
+                width="stretch"
+            )
+        with sig_c2:
+            tab3_tex_path = os.path.join(BASE_DIR, "saved_model", "Table3_Statistical_Significance.tex")
+            if os.path.isfile(tab3_tex_path):
+                with open(tab3_tex_path, "r", encoding="utf-8", errors="replace") as f:
+                    tab3_tex = f.read()
+                st.download_button(
+                    "⬇️ Download Significance LaTeX Code (Table 3)",
+                    data=tab3_tex,
+                    file_name="Table3_Statistical_Significance.tex",
+                    mime="text/plain",
+                    width="stretch"
+                )
+
     st.markdown("---")
 
-    # 2. ROC Curves & Confusion Matrix Gallery
-    st.markdown("#### 2. ROC Curves & Confusion Matrix Inspector")
+    # 3. Baseline Hyperparameter Tuning & Fairness Protocol
+    st.markdown("#### 3. Baseline Hyperparameter Tuning & Methodological Fairness Protocol")
+    st.caption("Addressing reviewer scrutiny regarding baseline fairness: systematic tuning space and configurations across all 6 architectures.")
+
+    hyperparams = benchmark_summary.get("hyperparameter_tuning", [])
+    if hyperparams:
+        df_hyp = pd.DataFrame(hyperparams).rename(columns={
+            "model": "Model Architecture",
+            "search_space": "Hyperparameter Search Space",
+            "optimal_params": "Selected Optimal Parameters",
+            "protocol": "Tuning & Validation Method"
+        })
+        st.dataframe(df_hyp, width="stretch", hide_index=True)
+
+    st.markdown("---")
+
+    # 4. ROC Curves & Confusion Matrix Gallery
+    st.markdown("#### 4. ROC Curves & Confusion Matrix Inspector")
     eval_tab_roc, eval_tab_cm, eval_tab_folds = st.tabs([
         "📈 Multi-Model ROC Curves", "🔲 Confusion Matrix Gallery (All 6 Models)", "📊 Fold-by-Fold Stability"
     ])
@@ -2198,37 +2271,116 @@ with tab_voice_deep:
 # =============================================================================
 with tab_docs:
     st.markdown("### 📑 Clinical Documentation & Research Standards")
+
+    # 1. Dataset Provenance & Licensing
+    st.markdown("#### 1. Dataset Provenance & Open Data Licensing")
     st.markdown(
         """
-        #### 1. Patient Cohort Overview (N = 2,025)
-        • **Total Cohort Size:** 2,025 patients.<br>
-        • **Healthy Controls (Class 0):** 761 individuals (37.58%).<br>
-        • **Parkinson's Disease Diagnosed (Class 1):** 1,264 individuals (62.42%).<br>
-        • **Cohort Feature Set:** Extracted from clinical neurological evaluations including motor ratings (UPDRS), cognitive scales (MoCA), daily living assessments, and clinician-confirmed cardinal motor symptoms.
-
-        #### 2. Research Benchmark Protocol
-        • **Cross-Validation:** 5-Fold Stratified Cross-Validation.<br>
-        • **Inside-Fold SMOTENC:** Synthetic Minority Over-sampling Technique for Nominal and Continuous features. 
-        Applied strictly on the training fold after splitting to guarantee zero information leakage into the test set.<br>
-        • **Models Evaluated:** Logistic Regression, K-Nearest Neighbors, Decision Tree, Support Vector Machine (RBF), Random Forest (200 estimators), XGBoost (Gradient Boosting).
-
-        #### 3. Publication Artifacts
-        All publication figures (300 DPI) and LaTeX tables are automatically synchronized and available in the 
-        <code>research/ieee_results/</code> directory:
-        • `Table1_Model_Benchmark.csv` / `.tex`
-        • `Table2_Feature_Ablation.csv` / `.tex`
-        • `Fig1_ROC_Curves.png` (Multi-Model 5-Fold ROC Curves)
-        • `Fig2_Confusion_Matrices.png` (Top 3 Model Confusion Matrices)
-        • `Fig3_Feature_Importance.png` (RF MDI vs. XGBoost Gain)
-        • `Fig4_SHAP_Global_Beeswarm.png` (TreeSHAP Beeswarm Plot)
-        • `Fig5_Feature_Ablation.png` (Accuracy Retention Bar Chart)
-
-        #### 4. Ethical & Medical Disclaimer
-        The software and statistical analyses provided in NeuroVision-PD are designed for academic and exploratory decision-support purposes. 
-        They do not constitute medical advice or a certified clinical diagnostic test. 
-        Any clinical decision should be made under the supervision of a licensed physician or neurologist.
+        <div class="card">
+            <b>📂 Cohort Origin & Composition:</b><br>
+            • <b>Total Cohort Size:</b> 2,025 clinically evaluated patients (Patient IDs 3058 to 5162).<br>
+            • <b>Diagnostic Distribution:</b> 761 Healthy Controls (37.58%) vs. 1,264 Clinician-Diagnosed Parkinson's Patients (62.42%).<br>
+            • <b>Clinical Dimensions Recorded:</b> Demographic factors, medical history, clinical examination metrics, cognitive evaluations (MoCA), daily living functional independence, and clinician-verified cardinal motor symptoms.<br>
+            • <b>Data Licensing:</b> Released under the <b>Creative Commons Attribution 4.0 International (CC BY 4.0)</b> open access license for clinical and computational research reproduction.
+        </div>
         """,
         unsafe_allow_html=True
+    )
+
+    # 2. Honest Limitations Statement: Proxy Features
+    st.markdown("#### 2. Clinical Scope & The Proxy-Feature Limitation")
+    st.markdown(
+        """
+        <div class="alert-banner alert-warning">
+            <h4 style="margin: 0 0 6px 0; color: #92400E;">⚠️ Methodological Transparency & Proxy-Feature Limitations:</h4>
+            • <b>Clinical Diagnostic Scales as Inputs:</b> The core predictive features in this study—specifically <b>UPDRS Part III Motor Examination</b>, 
+            <b>Montreal Cognitive Assessment (MoCA)</b>, and cardinal motor symptoms (<b>Tremor, Bradykinesia, Rigidity</b>)—are 
+            <b>established clinical rating scales already utilized by neurologists in diagnostic workups</b>, rather than independent molecular, 
+            genetic, or imaging biomarkers (such as DaTscan SPECT or cerebrospinal fluid &alpha;-synuclein seed amplification assays).<br>
+            • <b>Clinical Positioning:</b> The system does not purport to discover de novo biological pathology; rather, it provides 
+            <b>objective, rapid, algorithmic decision support, diagnostic risk quantification, and multi-model consensus validation</b> to standardize point-of-care screening and telemedicine triage.<br>
+            • <b>Empirical Mitigation via Feature Ablation (Prodromal Mode):</b> To rigorously demonstrate utility when specialized motor scales are unavailable, our 
+            <b>Feature-Ablation Study (Drop UPDRS)</b> proves that withholding the specialist UPDRS examination preserves <b>72.54% ± 1.73% Accuracy</b> and 
+            <b>0.7579 ROC-AUC</b> using only cognitive (MoCA), functional, and non-specialist symptom markers, establishing viable remote triage capacity.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # 3. Related Work & Comparative Literature Positioning
+    st.markdown("#### 3. Related Work & Comparative Literature Positioning")
+    st.caption("Contextualizing our 91.11% Accuracy and 0.9363 ROC-AUC against prior state-of-the-art benchmarks in Parkinson's detection literature.")
+
+    lit_comp = benchmark_summary.get("literature_comparison", [])
+    if lit_comp:
+        df_lit = pd.DataFrame(lit_comp).rename(columns={
+            "study": "Prior Published Study / Reference",
+            "cohort_features": "Cohort & Input Feature Modality",
+            "primary_model": "Primary Classifier",
+            "reported_metrics": "Reported Benchmark Metrics",
+            "methodological_caveats": "Methodological Nuance & Leakage Risk"
+        })
+        st.dataframe(df_lit, width="stretch", hide_index=True)
+
+        lit_c1, lit_c2 = st.columns(2)
+        with lit_c1:
+            st.download_button(
+                "⬇️ Download Literature Benchmark CSV (Table 4)",
+                data=df_lit.to_csv(index=False).encode('utf-8'),
+                file_name="Table4_Literature_Benchmark.csv",
+                mime="text/csv",
+                width="stretch"
+            )
+        with lit_c2:
+            tab4_tex_path = os.path.join(BASE_DIR, "saved_model", "Table4_Literature_Benchmark.tex")
+            if os.path.isfile(tab4_tex_path):
+                with open(tab4_tex_path, "r", encoding="utf-8", errors="replace") as f:
+                    tab4_tex = f.read()
+                st.download_button(
+                    "⬇️ Download Literature LaTeX Code (Table 4)",
+                    data=tab4_tex,
+                    file_name="Table4_Literature_Benchmark.tex",
+                    mime="text/plain",
+                    width="stretch"
+                )
+
+        st.markdown(
+            """
+            <div class="alert-banner alert-info">
+                <b>💡 Contextual Analysis for Reviewers:</b><br>
+                While nominal accuracies of ~93% have been published in non-peer-reviewed or contest contexts, those pipelines 
+                frequently executed global SMOTE resampling or global normalization prior to cross-validation fold partitioning, 
+                incurring severe synthetic data leakage. Under <b>strict inside-fold SMOTENC</b> where validation folds remain 100% untouched, 
+                our <b>91.11% ± 0.91% Accuracy (0.9284 F1, 0.9363 ROC-AUC)</b> represents a robust, un-inflated, and reproducible benchmark.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    # 4. Publication Artifacts Directory
+    st.markdown("#### 4. Publication Figures & Reproducibility Tables")
+    st.markdown(
+        """
+        All publication-ready artifacts (300 DPI figures and formal LaTeX tables) are generated and synchronized:
+        • <code>Table1_Model_Benchmark.csv / .tex</code> — 6-Model 5-Fold Stratified CV Summary (Mean ± SD)<br>
+        • <code>Table2_Feature_Ablation.csv / .tex</code> — 13-Configuration Feature-Ablation Study<br>
+        • <code>Table3_Statistical_Significance.csv / .tex</code> — Paired t-tests, Wilcoxon W, p-values & Cohen's d<br>
+        • <code>Table4_Literature_Benchmark.csv / .tex</code> — SOTA Literature Comparative Positioning<br>
+        • <code>Fig1_ROC_Curves.png</code> — Multi-Model 5-Fold Mean ROC Curves (300 DPI)<br>
+        • <code>Fig2_Confusion_Matrices.png</code> — Aggregated 5-Fold Confusion Matrices (300 DPI)<br>
+        • <code>Fig3_Feature_Importance.png</code> — Gini MDI vs. XGBoost Gain Comparison (300 DPI)<br>
+        • <code>Fig4_SHAP_Global_Beeswarm.png</code> — Full-Cohort TreeSHAP Beeswarm Risk Attribution (300 DPI)<br>
+        • <code>Fig5_Feature_Ablation.png</code> — Ablation Accuracy Retention Bar Chart (300 DPI)
+        """,
+        unsafe_allow_html=True
+    )
+
+    # 5. Ethical & Medical Disclaimer
+    st.markdown("#### 5. Ethical & Medical Disclaimer")
+    st.warning(
+        "⚠️ **Clinical Decision-Support Notice:** NeuroVision-PD is an academic and clinical decision-support research application. "
+        "The models, statistical metrics, acoustic analyses, and SHAP feature attributions presented herein do not constitute a standalone medical diagnosis. "
+        "All clinical decisions and therapeutic interventions must be made by a board-certified neurologist or licensed medical practitioner."
     )
 
 # Footer

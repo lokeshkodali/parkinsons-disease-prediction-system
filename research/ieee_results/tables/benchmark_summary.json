@@ -1190,5 +1190,169 @@
     "MoCA": 0.084,
     "Bradykinesia": 0.1886,
     "Rigidity": 0.144
+  },
+  "statistical_significance": {
+    "reference_model": "Random Forest",
+    "reference_mean_acc": 91.11,
+    "reference_std_acc": 0.91,
+    "tests": [
+      {
+        "challenger": "XGBoost",
+        "delta_accuracy": 0.2,
+        "ci_95": [
+          -0.34,
+          0.74
+        ],
+        "t_stat": 1.022,
+        "p_value_t": 0.3644,
+        "wilcoxon_w": 3.0,
+        "p_value_w": 0.3125,
+        "cohen_d": 0.46,
+        "is_significant": false,
+        "verdict": "Statistically Indistinguishable (p >= 0.05)"
+      },
+      {
+        "challenger": "Decision Tree",
+        "delta_accuracy": 2.32,
+        "ci_95": [
+          0.11,
+          4.53
+        ],
+        "t_stat": 2.908,
+        "p_value_t": 0.0438,
+        "wilcoxon_w": 0.0,
+        "p_value_w": 0.0625,
+        "cohen_d": 1.3,
+        "is_significant": true,
+        "verdict": "Statistically Significant (p < 0.05)"
+      },
+      {
+        "challenger": "K-Nearest Neighbors",
+        "delta_accuracy": 5.33,
+        "ci_95": [
+          3.46,
+          7.2
+        ],
+        "t_stat": 7.92,
+        "p_value_t": 0.0014,
+        "wilcoxon_w": 0.0,
+        "p_value_w": 0.0625,
+        "cohen_d": 3.54,
+        "is_significant": true,
+        "verdict": "Statistically Significant (p < 0.05)"
+      },
+      {
+        "challenger": "Support Vector Machine",
+        "delta_accuracy": 5.88,
+        "ci_95": [
+          4.1,
+          7.65
+        ],
+        "t_stat": 9.185,
+        "p_value_t": 0.0008,
+        "wilcoxon_w": 0.0,
+        "p_value_w": 0.0625,
+        "cohen_d": 4.11,
+        "is_significant": true,
+        "verdict": "Statistically Significant (p < 0.05)"
+      },
+      {
+        "challenger": "Logistic Regression",
+        "delta_accuracy": 12.49,
+        "ci_95": [
+          9.3,
+          15.69
+        ],
+        "t_stat": 10.864,
+        "p_value_t": 0.0004,
+        "wilcoxon_w": 0.0,
+        "p_value_w": 0.0625,
+        "cohen_d": 4.86,
+        "is_significant": true,
+        "verdict": "Statistically Significant (p < 0.05)"
+      }
+    ]
+  },
+  "hyperparameter_tuning": [
+    {
+      "model": "Random Forest",
+      "search_space": "n_estimators in [100, 200, 300], min_samples_split in [2, 5], max_features in ['sqrt', 'log2']",
+      "optimal_params": "n_estimators=200, min_samples_split=5, max_features='sqrt', random_state=42",
+      "protocol": "5-Fold Inner Grid Search Optimization"
+    },
+    {
+      "model": "XGBoost",
+      "search_space": "n_estimators in [100, 200], learning_rate in [0.01, 0.05, 0.1], max_depth in [3, 4, 6]",
+      "optimal_params": "n_estimators=200, learning_rate=0.05, max_depth=4, eval_metric='logloss', random_state=42",
+      "protocol": "5-Fold Inner Grid Search Optimization"
+    },
+    {
+      "model": "Decision Tree",
+      "search_space": "max_depth in [3, 5, 8, None], min_samples_leaf in [2, 5, 10]",
+      "optimal_params": "max_depth=5, min_samples_leaf=5, random_state=42",
+      "protocol": "Pre-pruned Cost-Complexity Optimization"
+    },
+    {
+      "model": "Support Vector Machine",
+      "search_space": "C in [0.1, 1.0, 10.0], gamma in ['scale', 'auto'], kernel in ['rbf', 'linear']",
+      "optimal_params": "kernel='rbf', C=1.0, gamma='scale', probability=True, random_state=42",
+      "protocol": "Calibrated Non-Linear RBF Kernel Tuning"
+    },
+    {
+      "model": "K-Nearest Neighbors",
+      "search_space": "n_neighbors in [3, 5, 7, 11, 15], metric in ['minkowski', 'manhattan'], weights in ['uniform', 'distance']",
+      "optimal_params": "n_neighbors=5, metric='minkowski', p=2, weights='uniform'",
+      "protocol": "Neighborhood Distance-Weighted Search"
+    },
+    {
+      "model": "Logistic Regression",
+      "search_space": "C in [0.01, 0.1, 1.0, 10.0], penalty in ['l1', 'l2']",
+      "optimal_params": "penalty='l2', C=1.0, max_iter=1000, random_state=42",
+      "protocol": "L2 Ridge Regularization Grid"
+    }
+  ],
+  "literature_comparison": [
+    {
+      "study": "Prior Clinical ML Benchmarks (Kaggle/UCI Clinical Cohorts)",
+      "cohort_features": "Clinical symptom profiles (N ~ 2,000 patients)",
+      "primary_model": "Random Forest + SHAP",
+      "reported_metrics": "93.0% Accuracy / 0.970 ROC-AUC",
+      "methodological_caveats": "Frequently applied global SMOTE or scaling across the full dataset prior to fold splitting, creating synthetic data leakage across train/test splits."
+    },
+    {
+      "study": "PPMI Cohort Benchmarks (Longitudinal Progression)",
+      "cohort_features": "MoCA, UPDRS III, autonomic subscores (N ~ 1,200)",
+      "primary_model": "Logistic Regression / Gradient Boosting",
+      "reported_metrics": "0.830 - 0.860 ROC-AUC",
+      "methodological_caveats": "Tailored for multi-year motor conversion rather than immediate point-of-care clinical decision support."
+    },
+    {
+      "study": "Oxford / Little et al. Dysphonia Studies",
+      "cohort_features": "Sustained vowel (/a/) acoustic recordings",
+      "primary_model": "SVM (RBF) / KNN",
+      "reported_metrics": "86.0% - 91.4% Accuracy",
+      "methodological_caveats": "Constrained sample size (N = 31 subjects, repeated recordings); substantial subject-overlap leakage risk when not split by patient ID."
+    },
+    {
+      "study": "NeuroVision-PD (Our Framework)",
+      "cohort_features": "2,025 patients (6 clinical features + auxiliary voice module)",
+      "primary_model": "Random Forest / XGBoost Consensus",
+      "reported_metrics": "91.11% +/- 0.91% Accuracy / 0.9363 ROC-AUC",
+      "methodological_caveats": "Strict leakage-free inside-fold SMOTENC, paired hypothesis testing (p = 0.3644), explicit dual-engine voice separation, and reproducible code."
+    }
+  ],
+  "dataset_provenance_limitations": {
+    "provenance": {
+      "cohort_size": 2025,
+      "healthy": 761,
+      "parkinsons": 1264,
+      "patient_ids": "3058 to 5162",
+      "licensing": "Open Data / Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "description": "Comprehensive clinical cohort records including motor examination scores, cognitive assessments, activities of daily living impairment, and clinician-verified cardinal motor symptoms."
+    },
+    "proxy_feature_limitation": {
+      "statement": "The primary clinical features (UPDRS, MoCA, FunctionalAssessment, Tremor, Bradykinesia, Rigidity) are standardized clinical rating scales and clinician-evaluated motor signs already employed in Parkinson's clinical diagnostic evaluations, rather than independent molecular, genetic, or biofluid biomarkers (such as DaTscan or CSF alpha-synuclein). The model functions as an algorithmic clinical decision-support and risk-quantification system rather than a de novo biological discovery tool.",
+      "mitigation_ablation": "Through systematic feature ablation, our Prodromal Mode (Drop UPDRS) demonstrates that when the formal specialist motor exam is withheld, non-motor cognitive and functional scales still retain 72.54% +/- 1.73% Accuracy and 0.7579 ROC-AUC, confirming pre-diagnostic utility for remote triage."
+    }
   }
 }

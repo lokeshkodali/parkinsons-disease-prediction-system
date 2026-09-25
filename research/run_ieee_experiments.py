@@ -240,6 +240,48 @@ print("\n" + df_table1.to_string(index=False))
 print(f"\nSaved Table 1: {csv_tab1_path} and {tex_tab1_path}")
 
 # ---------------------------------------------------------------------------
+# Experiment 1B: Paired Statistical Significance (Table 3)
+# ---------------------------------------------------------------------------
+print("\n" + "-" * 75)
+print("EXPERIMENT 1B: PAIRED STATISTICAL SIGNIFICANCE TESTS (RF VS. BASELINES)")
+print("-" * 75)
+
+rf_accs = np.array(model_results["Random Forest"]["accuracy"])
+sig_rows = []
+
+for m_name in ["XGBoost", "Decision Tree", "K-Nearest Neighbors", "Support Vector Machine", "Logistic Regression"]:
+    comp_accs = np.array(model_results[m_name]["accuracy"])
+    diff = rf_accs - comp_accs
+    d_mean = float(np.mean(diff))
+    t_stat, p_val_t = stats.ttest_rel(rf_accs, comp_accs)
+    try:
+        w_stat, p_val_w = stats.wilcoxon(rf_accs, comp_accs)
+    except Exception:
+        w_stat, p_val_w = np.nan, np.nan
+    ci_l, ci_h = stats.t.interval(0.95, df=len(diff)-1, loc=d_mean, scale=stats.sem(diff))
+    c_d = float(d_mean / np.std(diff, ddof=1)) if np.std(diff, ddof=1) > 0 else 0.0
+    sig_rows.append({
+        "Model Comparison": f"Random Forest vs. {m_name}",
+        "Delta Accuracy (%)": f"{d_mean:+.2f}%",
+        "95% CI": f"[{ci_l:+.2f}%, {ci_h:+.2f}%]",
+        "Paired t-stat": f"{t_stat:.3f}",
+        "p-value (t-test)": f"{p_val_t:.4f}",
+        "Wilcoxon W": f"{w_stat:.1f}",
+        "p-value (Wilcoxon)": f"{p_val_w:.4f}",
+        "Cohen's d": f"{c_d:.2f}",
+        "Significance (alpha=0.05)": "Significant (p < 0.05)" if p_val_t < 0.05 else "Indistinguishable (p >= 0.05)"
+    })
+
+df_table3 = pd.DataFrame(sig_rows)
+csv_tab3_path = os.path.join(TABLES_DIR, "Table3_Statistical_Significance.csv")
+tex_tab3_path = os.path.join(TABLES_DIR, "Table3_Statistical_Significance.tex")
+df_table3.to_csv(csv_tab3_path, index=False, encoding="utf-8")
+with open(tex_tab3_path, "w", encoding="utf-8") as f:
+    f.write(df_table3.to_latex(index=False, caption="Paired Statistical Significance Tests (Random Forest vs. Baseline Models Across 5 Folds)", label="tab:significance"))
+print(df_table3.to_string(index=False))
+print(f"\nSaved Table 3: {csv_tab3_path} and {tex_tab3_path}")
+
+# ---------------------------------------------------------------------------
 # Experiment 2: Feature-Ablation Study
 # ---------------------------------------------------------------------------
 print("\n" + "-" * 75)
