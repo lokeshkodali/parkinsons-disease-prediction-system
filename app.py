@@ -20,10 +20,12 @@ import warnings
 import joblib
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 import streamlit as st
 from xml.sax.saxutils import escape as xml_escape
 
-warnings.filterwarnings("ignore")
+from xml.sax.saxutils import escape as xml_escape
 
 # ---------------------------------------------------------------------------
 # Optional Packages (SHAP, Matplotlib, ReportLab, Parselmouth)
@@ -53,10 +55,15 @@ try:
 except Exception:
     reportlab_available = False
 
-import soundfile as sf
+try:
+    # Load optionally so the app can start when the audio dependency is absent.
+    import importlib
+    sf = importlib.import_module("soundfile")
+except Exception:
+    sf = None
 import scipy.signal as signal
 import scipy.io.wavfile as wavfile
-voice_libs_available = True
+voice_libs_available = sf is not None
 
 try:
     import parselmouth
@@ -1416,7 +1423,7 @@ with tab_clinical:
                         "Change": 2.19,
                         "Absolute Change": 2.19,
                         "Sensitivity": "Very low sensitivity",
-                        "Emoji": "🔴"
+                        "Emoji": "🔵"
                     },
                     {
                         "Feature": "FunctionalAssessment",
@@ -1493,7 +1500,7 @@ with tab_clinical:
             current_parkinsons_prob = probability_yes
 
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("# Demonstration of results obtained")
+            st.markdown('<div class="section-title">📈 Demonstration of Results Obtained</div>', unsafe_allow_html=True)
             col_focus, col_ranking = st.columns([1.15, 1])
 
             with col_focus:
@@ -1598,7 +1605,7 @@ with tab_clinical:
             # EXACT SECTION IN PICTURE 2: Demonstration — Voice Analysis & PDF Report
             # =================================================================
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("# Demonstration — Voice Analysis & PDF Report")
+            st.markdown('<div class="section-title">🎤 Demonstration — Voice Analysis & PDF Report</div>', unsafe_allow_html=True)
 
             col_demo_voice, col_demo_pdf = st.columns([1.15, 1])
 
@@ -1805,14 +1812,57 @@ with tab_benchmark:
         df_sig = pd.DataFrame(sig_display_rows)
         st.dataframe(df_sig, width="stretch", hide_index=True)
 
+        # Build the justification narrative dynamically from the same
+        # sig_tests data used for the table above, so it can never drift
+        # out of sync with the numbers actually shown.
+        tests_by_name = {t["challenger"]: t for t in sig_tests}
+        xgb_test = tests_by_name.get("XGBoost")
+        models_summary = benchmark_summary.get("models", {})
+        rf_auc = models_summary.get("Random Forest", {}).get("auc_mean")
+        xgb_auc = models_summary.get("XGBoost", {}).get("auc_mean")
+
+        if xgb_test is not None:
+
+            xgb_indistinguishable = not xgb_test["is_significant"]
+
+            xgb_line = (
+                f"• <b>Random Forest vs. XGBoost (p = {xgb_test['p_value_t']:.4f}):</b> "
+                f"The mean accuracy difference is merely "
+                f"<b>{xgb_test['delta_accuracy']:+.2f}%</b> with a 95% Confidence "
+                f"Interval of <b>[{xgb_test['ci_95'][0]:+.2f}%, "
+                f"{xgb_test['ci_95'][1]:+.2f}%]</b>. Because p "
+                f"{'&gt; 0.05' if xgb_indistinguishable else '&lt; 0.05'}, "
+                f"the two architectures are "
+                f"<b>{'statistically indistinguishable' if xgb_indistinguishable else 'statistically distinguishable'}</b> "
+                f"in predictive accuracy.<br>"
+            )
+
+        else:
+
+            xgb_line = ""
+
+        auc_line = (
+            f"Concurrently, XGBoost provides top ROC-AUC "
+            f"({xgb_auc:.4f}) as an essential consensus partner."
+            if (xgb_auc is not None and rf_auc is not None and xgb_auc >= rf_auc)
+            else "Concurrently, XGBoost remains an essential consensus partner."
+        )
+
+        other_challengers = [
+            t for t in sig_tests if t["challenger"] != "XGBoost"
+        ]
+        other_p_values = ", ".join(
+            f"{t['challenger']} (p = {t['p_value_t']:.4f})"
+            for t in other_challengers
+        )
+
         st.markdown(
-            """
+            f"""
             <div class="alert-banner alert-info">
                 <b>⚖️ Reviewer Justification & Model Selection Analysis:</b><br>
-                • <b>Random Forest vs. XGBoost (p = 0.3644):</b> The mean accuracy difference is merely <b>+0.20%</b> with a 95% Confidence Interval of <b>[-0.34%, +0.74%]</b>. 
-                Because p &gt; 0.05, the two architectures are <b>statistically indistinguishable</b> in predictive accuracy.<br>
-                • <b>Why Random Forest is the Primary Model:</b> Rather than asserting RF as an anomalous statistical outlier, RF was chosen as the primary point-of-care screening model because of <b>exact, deterministic TreeSHAP local attributions and clinical transparency</b>. Concurrently, XGBoost provides top ROC-AUC (0.9363) as an essential consensus partner.<br>
-                • <b>Significant Outperformance Over Traditional Baselines:</b> Ensemble tree methods significantly outperform Decision Tree (p = 0.0438), KNN (p = 0.0014), SVM (p = 0.0008), and Logistic Regression (p = 0.0004).
+                {xgb_line}
+                • <b>Why Random Forest is the Primary Model:</b> Rather than asserting RF as an anomalous statistical outlier, RF was chosen as the primary point-of-care screening model because of <b>exact, deterministic TreeSHAP local attributions and clinical transparency</b>. {auc_line}<br>
+                • <b>Significant Outperformance Over Traditional Baselines:</b> Ensemble tree methods significantly outperform {other_p_values}.
             </div>
             """,
             unsafe_allow_html=True
